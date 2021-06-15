@@ -1,48 +1,62 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Options;
+using ShoesWebsite.Helpers;
 using ShoesWebsite.Models;
 
 namespace ShoesWebsite.Providers
 {
     public class ManageProvider : IManageProvider
     {
-        private readonly List<ShoesModel> _entities = new List<ShoesModel>();
-        public Task<ShoesModel> Create(ShoesModel model)
+        private readonly IHttpHelper _httpHelper;
+        private readonly IOptions<ApiSettings> _apiSettings;
+
+        public ManageProvider(IHttpHelper httpHelper, IOptions<ApiSettings> apiSettings)
         {
-            model.Id = Guid.NewGuid();
-            _entities.Add(model);
-            return Task.FromResult(model);
+            _httpHelper = httpHelper;
+            _apiSettings = apiSettings;
         }
 
-        public Task<IEnumerable<ShoesModel>> GetAll()
+        public async Task<ShoesModel> Get(Guid id)
         {
-            return Task.FromResult<IEnumerable<ShoesModel>>(_entities.OrderBy(o => o.Name));
+            var url = GetApiUrl(id.ToString());
+            var response = await _httpHelper.Send<ShoesModel>(url, HttpMethod.Get);
+            return response;
         }
 
-        public Task<ShoesModel> Get(Guid id)
+        public async Task<List<ShoesModel>> GetAll()
         {
-            var entity = _entities.FirstOrDefault(i => i.Id == id);
-            return Task.FromResult(entity);
+            var url = GetApiUrl(string.Empty);
+            var response = await _httpHelper.Send<List<ShoesModel>>(url, HttpMethod.Get);
+            return response;
         }
 
-        public Task Delete(Guid id)
+        public async Task<ShoesModel> Create(ShoesModel model)
         {
-            _entities.RemoveAll(i => i.Id == id);
-
-            return Task.CompletedTask;
+            var url = GetApiUrl(string.Empty);
+            var response = await _httpHelper.Send<ShoesModel>(url, HttpMethod.Post, model);
+            return response;
         }
 
         public async Task<ShoesModel> Update(ShoesModel model)
         {
-            var entity = await Get(model.Id);
-            entity.Brand = model.Brand;
-            entity.Name = model.Name;
-            entity.Category = model.Category;
-            entity.Price = model.Price;
+            var url = GetApiUrl(string.Empty);
+            var response = await _httpHelper.Send<ShoesModel>(url, HttpMethod.Put, model);
+            return response;
+        }
 
-            return entity;
+        public Task<bool> Delete(Guid id)
+        {
+            var url = GetApiUrl(id.ToString());
+            return _httpHelper.Send(url, HttpMethod.Delete);
+        }
+
+        private string GetApiUrl(string path)
+        {
+            return $"{_apiSettings.Value.Host}/manage/{path}";
         }
     }
 }

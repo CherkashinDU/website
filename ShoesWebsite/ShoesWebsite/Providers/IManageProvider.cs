@@ -7,10 +7,11 @@ namespace ShoesWebsite.Providers
 {
     public interface IManageProvider
     {
-        Task<ShoesModel> Create(ShoesModel model);
         Task<ShoesModel> Get(Guid id);
-        Task Delete(Guid id);
-        Task<IEnumerable<ShoesModel>> GetAll();
+        Task<List<ShoesModel>> GetAll();
+        Task<ShoesModel> Create(ShoesModel model);
         Task<ShoesModel> Update(ShoesModel model);
+        Task<bool> Delete(Guid id);
+
     }
 }
